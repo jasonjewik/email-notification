@@ -54,8 +54,8 @@ Job started at:  $start_time
 Job finished at: $end_time
 Exit code:       $res 
 "
-mail -r "alert@$hostname" \
-     -s "Notification of `hostname` job completion" \
+hostname=`$hostname`
+mail -s "Notification of `hostname` job completion" \
      $email_addr <<< "$msg_body"
 
 echo "---"
