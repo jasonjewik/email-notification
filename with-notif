@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# Print help message
+if [[ $# -lt 2 ]] || [[ $1 = "-h" ]] || [[ $1 = "--help" ]]
+then
+  help_msg="
+  usage: with-notif [-h] email_addr command ...
+
+  with-notif is a tool to send you an email on job completion
+
+  positional arguments:
+    email_addr           The email address to send the notification to.
+    command              The command to run.
+    ...                  The arguments for the command.
+
+  optional arguments:
+    -h, --help           Show this help message and exit.
+  " 
+  echo "$help_msg"
+  exit 1
+fi
+
+# Validate email address
+# https://www.shellhacks.com/regex-find-email-addresses-file-grep/
+email_regex="\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}\b"
+email_addr=$1
+is_email=`echo $email_addr | grep -E -c $email_regex`
+if [[ $is_email -ne 1 ]]
+then
+  echo "$email_addr is not a valid email address"
+  exit 1
+fi
+shift 1
+
+# Get command
+com=""
+i=1
+j=$#
+while [[ $i -le $j ]]
+do
+  com+=" $1"
+  i=$((i + 1))
+  shift 1
+done
+
+# Run command
+start_time=`date -R`
+$com
+res=$?
+end_time=`date -R`
+msg_body="
+Command:         $com
+Job started at:  $start_time
+Job finished at: $end_time
+Exit code:       $res 
+"
+mail -r "alert@$hostname" \
+     -s "Notification of `hostname` job completion" \
+     $email_addr <<< "$msg_body"
+
+echo "---"
+echo "Email sent to $email_addr."
+echo "$msg_body"
+exit 0
+
